@@ -1,0 +1,788 @@
+
+<style>
+*{box-sizing:border-box;}
+.sem-btn{background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 13px;font-size:12px;color:var(--color-text-secondary);cursor:pointer;transition:all .15s;text-align:left;width:100%;}
+.sem-btn:hover{background:var(--color-background-secondary);}
+.sem-btn.active{background:#F5F3FF;border-color:#6366F1;color:#3730A3;}
+.subject-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;}
+.subject-row:last-child{border-bottom:none;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;background:#6366F1;}
+.section-label{font-size:11px;font-weight:500;letter-spacing:.04em;color:var(--color-text-tertiary);text-transform:uppercase;margin:0 0 8px;}
+.yr-label{font-size:10px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+
+/* Overview table */
+.overview-toggle{width:100%;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:6px;transition:background .15s;}
+.overview-toggle:hover{background:var(--color-background-secondary);}
+.overview-toggle-label{font-size:13px;font-weight:500;color:var(--color-text-primary);}
+.overview-toggle-meta{font-size:11px;color:var(--color-text-tertiary);}
+.overview-chevron{font-size:12px;color:var(--color-text-tertiary);transition:transform .2s;}
+.overview-chevron.open{transform:rotate(180deg);}
+.overview-panel{display:none;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:16px;margin-bottom:20px;}
+.overview-panel.open{display:block;}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.filter-btn{background:none;border:0.5px solid var(--color-border-secondary);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--color-text-secondary);cursor:pointer;transition:all .15s;}
+.filter-btn:hover{background:var(--color-background-secondary);}
+.filter-btn.active-f{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary);}
+
+/* Spreadsheet table */
+.ov-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+.ov-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-tertiary);padding:6px 10px;border-bottom:1.5px solid var(--color-border-secondary);border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
+.ov-table th:last-child{border-right:none;}
+.ov-table td{padding:0;vertical-align:top;border-right:0.5px solid var(--color-border-tertiary);}
+.ov-table td:last-child{border-right:none;}
+
+/* Year header rows */
+.yr-group-row td{padding:0;border-bottom:0.5px solid var(--color-border-secondary);}
+.yr-group-btn{width:100%;background:var(--color-background-secondary);border:none;padding:7px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;transition:background .15s;text-align:left;}
+.yr-group-btn:hover{background:var(--color-border-tertiary);}
+.yr-chevron{font-size:9px;color:var(--color-text-tertiary);transition:transform .2s;margin-left:auto;}
+.yr-chevron.open{transform:rotate(90deg);}
+.yr-content-row{border-bottom:0.5px solid var(--color-border-tertiary);}
+.yr-content-row.hidden{display:none;}
+
+/* Subject cells in the two-column layout */
+.sem-col{padding:0;vertical-align:top;}
+.subj-cell{padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;display:flex;align-items:flex-start;gap:7px;}
+.subj-cell:last-child{border-bottom:none;}
+.subj-cell.mandatory-cell{border-left:2px solid #6366F1;}
+.subj-cell.elective-cell{border-left:2px solid #F472B6;}
+.subj-cell.hidden{display:none !important;}
+.yr-content-row.hidden{display:none;}
+.ov-subject-name{font-weight:500;color:var(--color-text-primary);line-height:1.35;}
+.ov-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.5;margin-top:2px;}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap;}
+.badge-mandatory{background:#CCFBF1;color:#0F766E;}
+.badge-elective{background:#FDF2F8;color:#9D174D;}
+.badge-erasmus{background:#F5F3FF;color:#3730A3;}
+.ov-yr{font-size:11px;color:var(--color-text-secondary);white-space:nowrap;}
+.ov-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary);}
+.ov-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);}
+.legend-line{width:14px;height:2px;border-radius:1px;}
+</style>
+
+<div style="padding:1rem 0 0;">
+
+<!-- ── DEGREE TITLE ──────────────────────────────────────────────────── -->
+<div style="margin-bottom:16px;">
+  <div style="font-size:18px;font-weight:600;color:var(--color-text-primary);line-height:1.3;margin-bottom:4px;">Bachelor of Arts in Contemporary History, Politics and Economics</div>
+  <div style="font-size:12px;color:var(--color-text-tertiary);letter-spacing:.03em;">Universitat Autònoma de Barcelona (UAB)</div>
+  <div style="font-size:12px;color:var(--color-text-secondary);margin-top:8px;">Taught in English · 240 ECTS · 4 years · ERASMUS+ Mobility Program at Université Toulouse Jean Jaurès</div>
+</div>
+
+<!-- ── DEGREE SNAPSHOT ───────────────────────────────────────────────── -->
+<div style="margin-bottom:20px;">
+
+  <!-- Stat cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px;">
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px;">
+      <div style="font-size:10px;color:var(--color-text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Subjects</div>
+      <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1.1;">34</div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">across 8 semesters</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px;">
+      <div style="font-size:10px;color:var(--color-text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Language certification</div>
+      <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1.1;">DALF C2</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px;">
+      <div style="font-size:10px;color:var(--color-text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Internship</div>
+      <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1.1;">Work placement</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px;">
+      <div style="font-size:10px;color:var(--color-text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Capstone</div>
+      <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1.1;">Infrastructure Finance Dissertation</div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+
+    <!-- Discipline split donut -->
+    <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px;">
+      <div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Discipline split · ECTS</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#2563EB;display:inline-block;flex-shrink:0"></span>Economics &amp; Finance · 120</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#DC2626;display:inline-block;flex-shrink:0"></span>Politics &amp; Society · 72</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#EF9F27;display:inline-block;flex-shrink:0"></span>Area Studies · 36</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#1D9E75;display:inline-block;flex-shrink:0"></span>Language Certification · 12</span>
+      </div>
+      <div style="position:relative;height:180px;">
+        <canvas id="snap-disc" role="img" aria-label="Donut chart showing ECTS split: 120 economics & finance, 72 politics & society, 36 area studies, 12 language certification"></canvas>
+      </div>
+    </div>
+
+    <!-- Discipline shift per year stacked bar -->
+    <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px;">
+      <div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Discipline mix per year</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#2563EB;display:inline-block;flex-shrink:0"></span>Economics &amp; Finance</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#DC2626;display:inline-block;flex-shrink:0"></span>Politics &amp; Society</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#EF9F27;display:inline-block;flex-shrink:0"></span>Area Studies</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)"><span style="width:9px;height:9px;border-radius:2px;background:#1D9E75;display:inline-block;flex-shrink:0"></span>Language Certification</span>
+      </div>
+      <div style="position:relative;height:180px;">
+        <canvas id="snap-mix" role="img" aria-label="Stacked bar chart showing how discipline balance shifts from history-heavy in year 1 to economics-heavy by year 4"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+
+</div>
+
+<script>
+function initSnapshotCharts(){
+  if(typeof Chart==='undefined') return;
+  const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+  const textCol=isDark?'#b4b2a9':'#73726c';
+  const gridCol=isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.07)';
+
+  // Discipline donut
+  // Economics & Finance: 16 subjects × 6 ECTS + Internship 12 + Capstone 12 = 120
+  // Politics & Society: 12 subjects × 6 ECTS = 72
+  // Area Studies: 6 subjects × 6 ECTS = 36
+  // Language Certification: DALF C2 = 12
+  new Chart(document.getElementById('snap-disc'),{
+    type:'doughnut',
+    data:{
+      labels:['Economics & Finance','Politics & Society','Area Studies','Language Certification'],
+      datasets:[{data:[120,72,36,12],backgroundColor:['#2563EB','#DC2626','#EF9F27','#1D9E75'],borderWidth:0,hoverOffset:5}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} ECTS`}}}
+    }
+  });
+
+  // Discipline mix per year - ECTS
+  // Y1: Econ 4×6=24, PolSoc 3×6=18, Area 3×6=18
+  // Y2: Econ 3×6=18, PolSoc 6×6=36, Area 1×6=6
+  // Y3: Econ 5×6=30, PolSoc 3×6=18, Area 2×6=12
+  // Y4: Econ (4×6+12+12)=48, LangCert 12
+  new Chart(document.getElementById('snap-mix'),{
+    type:'bar',
+    data:{
+      labels:['Year 1','Year 2','Year 3','Year 4'],
+      datasets:[
+        {label:'Economics & Finance',data:[24,18,30,48],backgroundColor:'#2563EB',borderRadius:2,stack:'s'},
+        {label:'Politics & Society',data:[18,36,18,0],backgroundColor:'#DC2626',borderRadius:2,stack:'s'},
+        {label:'Area Studies',data:[18,6,12,0],backgroundColor:'#EF9F27',borderRadius:2,stack:'s'},
+        {label:'Language Certification',data:[0,0,0,12],backgroundColor:'#1D9E75',borderRadius:2,stack:'s'},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y} ECTS`}}},
+      scales:{
+        x:{stacked:true,grid:{color:gridCol},ticks:{color:textCol,font:{size:11}},border:{color:gridCol}},
+        y:{stacked:true,beginAtZero:true,grid:{color:gridCol},ticks:{color:textCol,font:{size:11},stepSize:10},border:{color:gridCol},max:60}
+      }
+    }
+  });
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" onload="initSnapshotCharts()"></script>
+
+<!-- ── PROGRAMME OVERVIEW (collapsible) ─────────────────────────────── -->
+<button class="overview-toggle" onclick="toggleOverview()" id="ov-toggle">
+  <div>
+    <span class="overview-toggle-label">Programme Overview</span>
+  </div>
+  <span class="overview-chevron" id="ov-chevron">▼</span>
+</button>
+
+<div class="overview-panel" id="ov-panel">
+
+  <div class="filter-bar">
+    <button class="filter-btn active-f" onclick="filterTable('all',this)">All subjects</button>
+    <button class="filter-btn" onclick="filterTable('mandatory',this)">Mandatory</button>
+    <button class="filter-btn" onclick="filterTable('elective',this)">Elective</button>
+    <button class="filter-btn" onclick="filterTable('erasmus',this)">🇫🇷 Erasmus</button>
+  </div>
+
+  <table class="ov-table" id="ov-table">
+    <thead>
+      <tr>
+        <th style="width:8%;"></th>
+        <th style="width:46%;">Semester 1</th>
+        <th style="width:46%;">Semester 2</th>
+      </tr>
+    </thead>
+    <tbody id="ov-tbody"></tbody>
+  </table>
+
+</div>
+
+<!-- ── RESEARCH OUTPUT (collapsible) ─────────────────────────────────── -->
+<button class="overview-toggle" onclick="toggleResearch()" id="res-toggle" style="margin-top:6px;">
+  <div>
+    <span class="overview-toggle-label">Research Output</span>
+    <span class="overview-toggle-meta" style="margin-left:8px;">30+ essays, reports &amp; projects</span>
+  </div>
+  <span class="overview-chevron" id="res-chevron">▼</span>
+</button>
+
+<div class="overview-panel" id="res-panel">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="res-filter-bar">
+    <button class="filter-btn active-f" onclick="filterResearch('all',this)">All</button>
+    <button class="filter-btn" onclick="filterResearch('econ',this)" style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:2px;background:#2563EB;display:inline-block;flex-shrink:0;"></span>Economics &amp; Finance</button>
+    <button class="filter-btn" onclick="filterResearch('pols',this)" style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:2px;background:#DC2626;display:inline-block;flex-shrink:0;"></span>Politics &amp; Society</button>
+    <button class="filter-btn" onclick="filterResearch('area',this)" style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:2px;background:#EF9F27;display:inline-block;flex-shrink:0;"></span>Area Studies</button>
+  </div>
+  <div id="res-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;"></div>
+</div>
+
+<!-- ── SEMESTER ANALYSIS (collapsible) ───────────────────────────────── -->
+<button class="overview-toggle" onclick="toggleAnalysis()" id="an-toggle" style="margin-top:6px;">
+  <div>
+    <span class="overview-toggle-label">Semester Analysis</span>
+  </div>
+  <span class="overview-chevron" id="an-chevron">▼</span>
+</button>
+
+<div class="overview-panel" id="an-panel">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);gap:20px;align-items:start;">
+
+    <div>
+      <div style="display:flex;flex-direction:column;gap:6px;" id="sem-list"></div>
+    </div>
+
+    <div id="detail-panel" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;min-height:300px;">
+      <div style="color:var(--color-text-tertiary);font-size:13px;margin-top:40px;text-align:center;">Select a semester</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── DISCIPLINE ANALYSIS (collapsible) ─────────────────────────────── -->
+<button class="overview-toggle" onclick="toggleDisc()" id="disc-toggle" style="margin-top:6px;">
+  <div>
+    <span class="overview-toggle-label">Discipline Analysis</span>
+  </div>
+  <span class="overview-chevron" id="disc-chevron">▼</span>
+</button>
+
+<div class="overview-panel" id="disc-panel">
+
+  <!-- Economics & Finance -->
+  <button class="overview-toggle" onclick="toggleDiscSub('econ')" id="disc-econ-toggle" style="margin-bottom:6px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:9px;height:9px;border-radius:2px;background:#2563EB;display:inline-block;flex-shrink:0;"></span>
+      <span class="overview-toggle-label">Economics &amp; Finance</span>
+      <span class="overview-toggle-meta" style="margin-left:4px;">120 ECTS · 16 subjects + internship + dissertation</span>
+    </div>
+    <span class="overview-chevron" id="disc-econ-chevron">▼</span>
+  </button>
+  <div class="overview-panel" id="disc-econ-panel" style="margin-bottom:10px;">
+    <div id="disc-econ-list"></div>
+  </div>
+
+  <!-- Politics & Society -->
+  <button class="overview-toggle" onclick="toggleDiscSub('pols')" id="disc-pols-toggle" style="margin-bottom:6px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:9px;height:9px;border-radius:2px;background:#DC2626;display:inline-block;flex-shrink:0;"></span>
+      <span class="overview-toggle-label">Politics &amp; Society</span>
+      <span class="overview-toggle-meta" style="margin-left:4px;">72 ECTS · 12 subjects</span>
+    </div>
+    <span class="overview-chevron" id="disc-pols-chevron">▼</span>
+  </button>
+  <div class="overview-panel" id="disc-pols-panel" style="margin-bottom:10px;">
+    <div id="disc-pols-list"></div>
+  </div>
+
+  <!-- Area Studies -->
+  <button class="overview-toggle" onclick="toggleDiscSub('area')" id="disc-area-toggle" style="margin-bottom:6px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:9px;height:9px;border-radius:2px;background:#EF9F27;display:inline-block;flex-shrink:0;"></span>
+      <span class="overview-toggle-label">Area Studies</span>
+      <span class="overview-toggle-meta" style="margin-left:4px;">36 ECTS · 6 subjects</span>
+    </div>
+    <span class="overview-chevron" id="disc-area-chevron">▼</span>
+  </button>
+  <div class="overview-panel" id="disc-area-panel" style="margin-bottom:0;">
+    <div id="disc-area-list"></div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+// ── OVERVIEW DATA ──────────────────────────────────────────────────────
+const subjects = [
+  {name:'Introduction to Economics I',year:'Year 1',sem:'S1',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Grounds microeconomics from the capitalist revolution and constrained choice through game theory, the firm, competitive markets, credit markets, and market failures.'},
+  {name:'Tools for Empirical Economic Analysis',year:'Year 1',sem:'S1',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Develops probability theory, standard statistical distributions, index numbers, and Bayesian inference as the quantitative infrastructure for all subsequent empirical work, grounding formal reasoning in economic measurement from the outset.'},
+  {name:'Contemporary World History',year:'Year 1',sem:'S1',mandatory:true,erasmus:false,discipline:'area',
+   desc:'Traces the transformation of the international order from the postwar settlement through the Cold War, decolonisation, and the neoliberal turn to the post-1991 settlement.'},
+  {name:'Contemporary Social Structures',year:'Year 1',sem:'S1',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Examines stratification theory, elite sociology, and the mechanisms of inequality reproduction through David B. Grusky\'s framework of social stratification and intersectional analysis.'},
+  {name:'Political Institutions',year:'Year 1',sem:'S1',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Analyses the architecture of democratic and authoritarian regimes, electoral systems, federalism, and Rodrik\'s trilemma on the structural limits of deep economic globalisation.'},
+  {name:'Introduction to Economics II',year:'Year 1',sem:'S2',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Covers macroeconomics: the WS-PS model, aggregate demand, the multiplier, inflation, fiscal and monetary policy, the financial sector, growth theory, and the political economy of government.'},
+  {name:'World Economic History',year:'Year 1',sem:'S2',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Traces economic development from the Malthusian economy through the Industrial Revolution, the Great Depression, the Bretton Woods golden age, and the second globalisation.'},
+  {name:'Contemporary European History',year:'Year 1',sem:'S2',mandatory:true,erasmus:false,discipline:'area',
+   desc:'Examines European history from postwar reconstruction and the Marshall Plan through decolonisation, 1968, the shift to neoliberalism, and the 1989 revolutions.'},
+  {name:'Contemporary History of East Asia',year:'Year 1',sem:'S2',mandatory:true,erasmus:false,discipline:'area',
+   desc:'Traces the political and economic history of the region from the Sino-Japanese War through the East Asian economic miracles, Japan\'s bubble, and Xi Jinping\'s China.'},
+  {name:'Theory of Democracy',year:'Year 1',sem:'S2',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Traces liberal democratic theory from Locke and Rousseau through pluralist, elitist, and critical traditions to the contemporary crises of populism, climate governance, and geopolitical competition.'},
+  {name:'Public Economics',year:'Year 2',sem:'S1',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Covers welfare economics, the taxonomy of market failures, externalities, Pigouvian taxation, the Coase theorem, public goods, Arrow\'s impossibility theorem, cost-benefit analysis, and social insurance design.'},
+  {name:'Statistics',year:'Year 2',sem:'S1',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Develops regression analysis, hypothesis testing, and statistical inference as the methodological toolkit for applied empirical economic work, with hands-on application in R.'},
+  {name:'Public Administration',year:'Year 2',sem:'S1',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Examines the structure and reform of administrative institutions, governance theory, accountability mechanisms, the regulatory functions of the state, and the welfare state as a service provider.'},
+  {name:'From Fascism to National Populism',year:'Year 2',sem:'S1',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Traces the ideological mutation of anti-democratic politics from postwar neo-fascism through intellectual reformulations to Perón, Berlusconi, and the contemporary national-populist wave.'},
+  {name:'History of the United States of America',year:'Year 2',sem:'S1',mandatory:true,erasmus:false,discipline:'area',
+   desc:'Traces the political economy of the United States from Bretton Woods through the Cold War, civil rights, the oil shocks, the Reagan programme, and contemporary polarisation.'},
+  {name:'International Economics',year:'Year 2',sem:'S2',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Examines international trade, comparative advantage, the WTO and IMF, FDI, global value chains, exchange rate regimes, and sovereign debt crises from Mexico 1994 to Argentina 2002.'},
+  {name:'The Gender Perspective in the Contemporary World',year:'Year 2',sem:'S2',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Traces feminist thought from patriarchy theory through successive waves of feminist theory and practice, intersectional and decolonial critique, and gender politics as institutionalised public policy.'},
+  {name:'Social Movements',year:'Year 2',sem:'S2',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Provides a comparative genealogy of collective action across labour, women\'s, civil rights, environmental, and contemporary urban housing movements, examining the organisational forms, repertoires, and political outcomes of each.'},
+  {name:'Public Policies',year:'Year 2',sem:'S2',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Delivers the formal policy analysis curriculum: problem construction, agenda-setting, formulation, decision rationality, implementation, evaluation, and the dynamics of policy change.'},
+  {name:'International Relations',year:'Year 2',sem:'S2',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Examines the principal theoretical traditions from realism through constructivism and postcolonialism, applied to geopolitics, securitisation, the architecture of the international order, and the structural conditions of interstate cooperation and conflict.'},
+  {name:'Political Behavior',year:'Year 3',sem:'S1',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Examines how voters form preferences, how parties construct coalitions, the determinants of electoral participation in comparative perspective, and forms of non-electoral political engagement.'},
+  {name:'European Economy',year:'Year 3',sem:'S1',mandatory:true,erasmus:false,discipline:'econ',
+   desc:'Traces the economic history of European integration from 1957 to the present, including the Eurozone crisis, Brexit, and the geoeconomics of energy transition and sanctions policy.'},
+  {name:'Contemporary History of Latin America',year:'Year 3',sem:'S1',mandatory:true,erasmus:true,discipline:'area',
+   desc:'Examines Latin American political economy through the Washington Consensus, the Pink Tide, and contemporary resource nationalism, with a research focus on Chile 1973 to the present.'},
+  {name:'Contemporary History of Spain',year:'Year 3',sem:'S1',mandatory:true,erasmus:false,discipline:'area',
+   desc:'Traces Spain\'s transformation from Francoist autarky through the technocratic development model of the 1960s, the negotiated transition to democracy, and consolidation within the European economic and political order.'},
+  {name:'Comparative Politics',year:'Year 3',sem:'S1',mandatory:true,erasmus:false,discipline:'pols',
+   desc:'Provides the methodology for systematic cross-national analysis of regime types, democratic transitions, democratic backsliding, and the effects of electoral systems and party organisations.'},
+  {name:'Institutions and Politics of the European Union',year:'Year 3',sem:'S2',mandatory:true,erasmus:true,discipline:'pols',
+   desc:'Provides a detailed treatment of EU treaty history, the architecture and powers of EU institutions, integration theories, and the full range of European policies including the single market and energy regulation.'},
+  {name:'Economic Models of Choice and Strategic Interaction',year:'Year 3',sem:'S2',mandatory:true,erasmus:true,discipline:'econ',
+   desc:'Develops optimisation methods, individual decision theory under uncertainty, consumer and firm theory, and game theory including Nash equilibrium in simultaneous and sequential games.'},
+  {name:'Economics of Social Policies',year:'Year 3',sem:'S2',mandatory:false,erasmus:true,discipline:'econ',
+   desc:'Examines the economics of government intervention in markets to achieve social outcomes, and the efficiency and fiscal implications of alternative policy instruments and programme designs.'},
+  {name:'Labour Economics',year:'Year 3',sem:'S2',mandatory:false,erasmus:true,discipline:'econ',
+   desc:'Develops the theory and empirics of wages, employment, human capital investment, and labour market institutions in a comparative international framework, covering monopsony, collective bargaining, and the political economy of labour market reform.'},
+  {name:'Economic Anthropology and Political Economy',year:'Year 3',sem:'S2',mandatory:false,erasmus:true,discipline:'econ',
+   desc:'Examines how cultural and institutional context shapes economic behaviour, providing a framework for understanding constraints that standard economic models systematically underestimate.'},
+  {name:'National Macroeconomics',year:'Year 4',sem:'Full year',mandatory:false,erasmus:true,discipline:'econ',
+   desc:'Covers the economic circuit and national accounting, the historical evolution and determinants of growth, sustainable growth, financial concentration and productive decentralisation, labour markets, state redistribution and consumption, and the financing of the economy through capital markets and financial globalisation.'},
+  {name:'Economic Theory of State-Market Relations',year:'Year 4',sem:'Full year',mandatory:false,erasmus:true,discipline:'econ',
+   desc:'Traces the theoretical history of state-market relations from Smith to the present: the classical role of the state before Keynes, the Keynesian foundations of public intervention, post-Keynesian developments, and the liberal challenge to state intervention.'},
+  {name:'Advanced Statistics',year:'Year 4',sem:'Full year',mandatory:false,erasmus:true,discipline:'econ',
+   desc:'Completes the quantitative programme with regression analysis, inference, and econometric methods for reading research literature and constructing evidence-based arguments, including model specification, diagnostics, and interpretation of results.'},
+  {name:'Public Finance',year:'Year 4',sem:'Full year',mandatory:false,erasmus:false,discipline:'econ',
+   desc:'Examines government revenue and expenditure, the theory of public investment, fiscal rules, debt sustainability, and the structure of public-private partnerships, with direct application to infrastructure finance and energy project economics.'},
+  {name:'DALF C2',year:'Year 4',sem:'Full year',mandatory:false,erasmus:true,
+   desc:'French language certification at C2 level, providing operational capacity in international institutions where French is a primary working language, including the OECD, IEA, and European Commission.'},
+  {name:'Internship',year:'Year 4',sem:'Full year',mandatory:false,erasmus:false,discipline:'econ',
+   desc:'A structured professional placement that translates four years of analytical formation into direct institutional and practical experience, applying the programme\'s analytical toolkit in a real organisational context.'},
+  {name:'Capstone Dissertation',year:'Year 4',sem:'Full year',mandatory:false,erasmus:false,discipline:'econ',
+   desc:'A sustained research project on offshore wind project finance at the intersection of public policy, energy economics, and state-market relations, synthesising all analytical strands of the degree.'},
+];
+
+function toggleOverview(){
+  const panel=document.getElementById('ov-panel');
+  const chev=document.getElementById('ov-chevron');
+  panel.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function toggleAnalysis(){
+  const panel=document.getElementById('an-panel');
+  const chev=document.getElementById('an-chevron');
+  panel.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function toggleDisc(){
+  const panel=document.getElementById('disc-panel');
+  const chev=document.getElementById('disc-chevron');
+  panel.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function toggleDiscSub(id){
+  const panel=document.getElementById('disc-'+id+'-panel');
+  const chev=document.getElementById('disc-'+id+'-chevron');
+  panel.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function buildDiscLists(){
+  const discColors = {econ:'#2563EB', pols:'#DC2626', area:'#EF9F27'};
+  const discBgs = {econ:'#EFF6FF', pols:'#FEF2F2', area:'#FFFBEB'};
+  ['econ','pols','area'].forEach(disc=>{
+    const list = subjects.filter(s=>s.discipline===disc);
+    const color = discColors[disc];
+    const bg = discBgs[disc];
+    document.getElementById('disc-'+disc+'-list').innerHTML = list.map((s,i)=>`
+      <div style="border:0.5px solid ${color};border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:6px;">
+        <button onclick="toggleDiscItem('${disc}-${i}')" style="width:100%;background:${bg};border:none;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left;">
+          <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);line-height:1.3;">${s.name}</span>
+          <span id="disc-item-chev-${disc}-${i}" style="font-size:10px;color:${color};flex-shrink:0;transition:transform .2s;display:inline-block;">▼</span>
+        </button>
+        <div id="disc-item-${disc}-${i}" style="display:none;padding:9px 12px 10px;background:var(--color-background-primary);border-top:0.5px solid ${color};">
+          <span style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">${s.desc}</span>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function toggleDiscItem(id){
+  const panel = document.getElementById('disc-item-'+id);
+  const chev = document.getElementById('disc-item-chev-'+id);
+  const open = panel.style.display==='none';
+  panel.style.display = open ? 'block' : 'none';
+  chev.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function toggleResearch(){
+  const panel=document.getElementById('res-panel');
+  const chev=document.getElementById('res-chevron');
+  panel.classList.toggle('open');
+  chev.classList.toggle('open');
+  if(panel.classList.contains('open') && !panel.dataset.built){
+    buildResearchGrid();
+    panel.dataset.built='1';
+  }
+}
+
+const researchItems = [
+  // Y1
+  {discipline:'econ', subject:'Introduction to Economics I', title:'The Underground Economy in Spain', type:'Research', erasmus:false},
+  {discipline:'econ', subject:'Introduction to Economics I', title:'Climate Change: Data, Policies and Institutions', type:'Report', erasmus:false},
+  {discipline:'econ', subject:'Introduction to Economics I', title:'The German Model of Industrial Relations', type:'Report', erasmus:false},
+  {discipline:'econ', subject:'Tools for Empirical Economic Analysis', title:'Quantitative Analysis of Salary Using R', type:'Report', erasmus:false},
+  {discipline:'pols', subject:'Contemporary Social Structures', title:'Quantitative Analysis of Inequality in Europe (R)', type:'Report', erasmus:false},
+  {discipline:'pols', subject:'Political Institutions', title:'Max Weber, Politics as a Vocation', type:'Essay', erasmus:false},
+  {discipline:'pols', subject:'Political Institutions', title:'2023 Argentinian Elections', type:'Research', erasmus:false},
+  {discipline:'econ', subject:'Introduction to Economics II', title:'Rethinking Macroeconomics: Degrowth, Climate Change and Sustainability', type:'Research', erasmus:false},
+  {discipline:'econ', subject:'Introduction to Economics II', title:'Claudia Goldin and Gender Discrimination in the Labour Market', type:'Report', erasmus:false},
+  {discipline:'econ', subject:'Introduction to Economics II', title:'The German vs the US Economic Model', type:'Report', erasmus:false},
+  {discipline:'econ', subject:'Introduction to Economics II', title:'Public Debt in European Countries', type:'Report', erasmus:false},
+  {discipline:'area', subject:'Contemporary European History', title:'Marshall Plan in France', type:'Research', erasmus:false},
+  {discipline:'area', subject:'Contemporary European History', title:'The Think-Tank Archipelago: Thatcherism and Neoliberalism', type:'Report', erasmus:false},
+  {discipline:'area', subject:'Contemporary History of East Asia', title:'History of Mitsubishi (1870-1973)', type:'Research', erasmus:false},
+  {discipline:'pols', subject:'Theory of Democracy', title:'Is Liberal Democracy Just Bourgeois Democracy?', type:'Essay', erasmus:false},
+  // Y2
+  {discipline:'econ', subject:'Public Economics', title:'Unemployment Benefits in France vs the US', type:'Report', erasmus:false},
+  {discipline:'econ', subject:'Public Economics', title:'Aggregate Demand and Supply-Side Policy', type:'Report', erasmus:false},
+  {discipline:'econ', subject:'Statistics', title:'Minimum Wage and Unemployment: an R Studio Analysis', type:'Project', erasmus:false},
+  {discipline:'pols', subject:'Public Administration', title:'Comparative Analysis of Public Administration in Spain and Morocco', type:'Report', erasmus:false},
+  {discipline:'pols', subject:'From Fascism to National Populism', title:'Lepenism after Jean-Marie Le Pen', type:'Report', erasmus:false},
+  {discipline:'area', subject:'History of the United States of America', title:'US Foreign Policy and the Rise of ARAMCO', type:'Research', erasmus:false},
+  {discipline:'econ', subject:'International Economics', title:'Trade Integration in the Maghreb', type:'Report', erasmus:false},
+  {discipline:'pols', subject:'The Gender Perspective in the Contemporary World', title:'European Feminisms 1700-1950', type:'Research', erasmus:false},
+  {discipline:'pols', subject:'The Gender Perspective in the Contemporary World', title:'Women and the Enlightenment: A Historiographical Reassessment', type:'Essay', erasmus:false},
+  {discipline:'pols', subject:'Social Movements', title:'Gezi Park Protests, 2013', type:'Research', erasmus:false},
+  {discipline:'pols', subject:'International Relations', title:'Migration, Power and Partnerships: Europe\'s Strategic Future with Morocco and Türkiye', type:'Research', erasmus:false},
+  // Y3
+  {discipline:'area', subject:'Contemporary History of Latin America', title:'Economic Administration of Chile (1973-present)', type:'Research', erasmus:true},
+  {discipline:'econ', subject:'Economics of Social Policies', title:'The Cooperative Business Movement (1950-present)', type:'Report', erasmus:true},
+  {discipline:'pols', subject:'Institutions and Politics of the EU', title:'The Paris Charter and Economic Cooperation', type:'Report', erasmus:true},
+  {discipline:'econ', subject:'Economic Models of Choice and Strategic Interaction', title:'Consumer Analysis and the Role of Information in Sustainable Choices', type:'Report', erasmus:true},
+  // Y4
+  {discipline:'econ', subject:'Capstone Dissertation', title:'Offshore Wind Project Finance', type:'Dissertation', erasmus:false},
+];
+
+const typeColors = {
+  'Research': {bg:'#FEF9C3', color:'#854D0E'},
+  'Report':   {bg:'#E0F2FE', color:'#0369A1'},
+  'Essay':    {bg:'#FEF2F2', color:'#991B1B'},
+  'Project':  {bg:'#FFF7ED', color:'#9A3412'},
+  'Dissertation': {bg:'#F5F3FF', color:'#5B21B6'},
+};
+
+function buildResearchGrid(filter){
+  const grid = document.getElementById('res-grid');
+  const items = filter && filter!=='all'
+    ? researchItems.filter(r=> r.discipline===filter)
+    : researchItems;
+
+  grid.innerHTML = items.map(r=>{
+    const tc = typeColors[r.type] || {bg:'#F3F4F6',color:'#374151'};
+    return `<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px;">
+        <span style="font-size:11px;color:var(--color-text-secondary);">${r.subject}${r.erasmus?' 🇫🇷':''}</span>
+        <span style="flex-shrink:0;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;background:${tc.bg};color:${tc.color};">${r.type}</span>
+      </div>
+      <div style="font-size:13px;font-weight:500;color:var(--color-text-primary);line-height:1.4;">${r.title}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterResearch(filter, btn){
+  document.querySelectorAll('#res-filter-bar .filter-btn').forEach(b=>b.classList.remove('active-f'));
+  btn.classList.add('active-f');
+  buildResearchGrid(filter);
+}
+
+function filterTable(type,btn){
+  document.querySelectorAll('#ov-panel .filter-btn').forEach(b=>b.classList.remove('active-f'));
+  btn.classList.add('active-f');
+  document.querySelectorAll('.subj-cell').forEach(cell=>{
+    const m=cell.dataset.mandatory, e=cell.dataset.erasmus;
+    let show=true;
+    if(type==='mandatory') show=m==='true';
+    else if(type==='elective') show=m==='false';
+    else if(type==='erasmus') show=e==='true';
+    cell.classList.toggle('hidden',!show);
+  });
+}
+
+function toggleYear(yr){
+  const rows=document.querySelectorAll('.yr-content-row[data-yr="'+yr+'"]');
+  const chev=document.getElementById('yr-chev-'+yr);
+  const isHidden=rows.length>0&&rows[0].classList.contains('hidden');
+  rows.forEach(r=>r.classList.toggle('hidden',!isHidden));
+  if(isHidden){chev.style.transform='rotate(90deg)';}else{chev.style.transform='';}
+}
+
+function buildTable(){
+  const tbody=document.getElementById('ov-tbody');
+  const years=['Year 1','Year 2','Year 3','Year 4'];
+  years.forEach(yr=>{
+    const yrId=yr.replace(/\s+/g,'');
+    // Year header row
+    const hrTr=document.createElement('tr');
+    hrTr.className='yr-group-row';
+    const hrTd=document.createElement('td');
+    hrTd.colSpan=3;
+    hrTd.style.padding='0';
+    hrTd.innerHTML=`<button class="yr-group-btn" onclick="toggleYear('${yrId}')">
+      <span id="yr-chev-${yrId}" style="font-size:9px;color:var(--color-text-tertiary);transition:transform .2s;display:inline-block;transform:rotate(90deg);">▶</span>
+      ${yr}
+    </button>`;
+    hrTr.appendChild(hrTd);
+    tbody.appendChild(hrTr);
+
+    const s1=subjects.filter(s=>s.year===yr&&s.sem==='S1');
+    const s2=subjects.filter(s=>s.year===yr&&s.sem==='S2');
+    const fy=subjects.filter(s=>s.year===yr&&s.sem==='Full year');
+
+    const makeCell=(s)=>s?`
+      <div class="subj-cell ${s.mandatory?'mandatory-cell':'elective-cell'}" data-mandatory="${s.mandatory}" data-erasmus="${s.erasmus}">
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;">
+            <span class="ov-subject-name">${s.name}</span>
+            <span class="badge ${s.mandatory?'badge-mandatory':'badge-elective'}">${s.mandatory?'Mandatory':'Elective'}</span>
+            ${s.erasmus?'<span class="badge badge-erasmus">🇫🇷 Erasmus</span>':''}
+          </div>
+          <div class="ov-desc">${s.desc}</div>
+        </div>
+      </div>` : `<div></div>`;
+
+    if(fy.length>0){
+      const tr=document.createElement('tr');
+      tr.className='yr-content-row';
+      tr.dataset.yr=yrId;
+      const labelTd=document.createElement('td');
+      labelTd.style.cssText='padding:0;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);vertical-align:top;';
+      labelTd.innerHTML='';
+      const fyTd=document.createElement('td');
+      fyTd.colSpan=2;
+      fyTd.style.padding='0';
+      fyTd.innerHTML=fy.map(s=>makeCell(s)).join('');
+      tr.appendChild(labelTd);
+      tr.appendChild(fyTd);
+      tbody.appendChild(tr);
+    } else {
+      const maxRows=Math.max(s1.length,s2.length);
+      for(let i=0;i<maxRows;i++){
+        const tr=document.createElement('tr');
+        tr.className='yr-content-row';
+        tr.dataset.yr=yrId;
+        if(i===0){
+          const lt=document.createElement('td');
+          lt.rowSpan=maxRows;
+          lt.style.cssText='padding:0;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);vertical-align:top;width:6px;';
+          tr.appendChild(lt);
+        }
+        const t1=document.createElement('td');
+        t1.style.cssText='padding:0;border-right:0.5px solid var(--color-border-tertiary);';
+        t1.innerHTML=makeCell(s1[i]);
+        const t2=document.createElement('td');
+        t2.style.padding='0';
+        t2.innerHTML=makeCell(s2[i]);
+        tr.appendChild(t1);
+        tr.appendChild(t2);
+        tbody.appendChild(tr);
+      }
+    }
+  });
+}
+
+// ── SEMESTER MAP DATA ──────────────────────────────────────────────────
+const data = [
+  {
+    id:'y1s1', year:'Year 1', sem:'Semester 1',
+    phase:'Foundation',
+    headline:'The world as a system of institutions',
+    subjects:[
+      {name:'Introduction to Economics I', research:'Research: The Underground Economy in Spain · Report: Climate Change: Data, Policies and Institutions · Report: The German Model of Industrial Relations'},
+      {name:'Tools for Empirical Economic Analysis', research:'Report: Quantitative Analysis of Salary Using R'},
+      {name:'Contemporary World History', research:'Research: Fall of Saigon'},
+      {name:'Contemporary Social Structures', research:'Report: Quantitative Analysis of Inequality in Europe (R)'},
+      {name:'Political Institutions', research:'Essay: Max Weber, Politics as a Vocation · Research: 2023 Argentinian Elections'},
+    ],
+    analysis:'Introduction to Economics I provides a rigorous grounding in microeconomics, proceeding from the long-run history of prosperity and inequality (the Malthusian trap, the capitalist revolution, structural transformation from agriculture to industry, the relationship between economic activity and the biosphere) through technology and incentives (opportunity cost, comparative advantage, production functions, innovation rents, and the Industrial Revolution); constrained choice and consumer theory (indifference curves, feasible sets, income and substitution effects, cross-country variation in working hours); game theory (Nash equilibrium, the prisoners\' dilemma, the Pareto criterion, public goods problems, social preferences, the ultimatum game, coordination games); the role of institutions in shaping the distribution of the economic surplus (fairness criteria, a sequence from forced labour to democratic bargaining, the Lorenz curve and Gini coefficient); the firm and its employees (separation of ownership from control, employment rents, the labour discipline model, the wage-setting curve); the firm and its customers (cost functions, demand elasticity, profit maximisation, market structures from monopoly to oligopoly, competition policy); competitive markets in full (price-taking equilibrium, gains from trade, supply and demand dynamics, tax incidence, price controls); credit markets (intertemporal choice, principal-agent problems between borrower and lender, credit rationing, poverty traps); and market failures in their complete taxonomy (externalities, Pigouvian taxation, the Coase theorem, public goods, asymmetric information, moral hazard, and adverse selection). Tools for Empirical Economic Analysis installs the statistical infrastructure on which all subsequent quantitative work depends: sampling theory, frequency distributions, measures of central tendency and dispersion, index numbers, and the full suite of probability distributions (Bernoulli, Binomial, Poisson, Geometric, Uniform, Exponential, Normal) with a systematic treatment of conditional probability and Bayesian reasoning from the outset. The institutional framework within which these economic models operate is developed in parallel across the three companion subjects. Contemporary World History traces the transformation of the international order from the postwar settlement through decolonisation, the Cold War, and the neoliberal turn. Contemporary Social Structures examines stratification, elite sociology, and the mechanisms of inequality reproduction through David B. Grusky\'s framework, with intersectional analyses of race, gender, and labour markets. Political Institutions provides the formal architecture of democratic and authoritarian regimes, electoral systems, federalism, and Rodrik\'s impossibility trilemma: the first formal statement in the programme of the structural tension between open markets and democratic governance.',
+    thread:'Infrastructure transactions are institutional negotiations: between sovereign authority and private capital, between regulatory frameworks and market incentives, between the distribution of risk and the distribution of returns. The analytical foundation laid here, microeconomic theory, the architecture of political regimes, and the mechanisms by which inequality is produced and reproduced, is the grammar of that negotiation. The research choices made from the outset, game theory applied to the underground economy, the political sociology of the 2023 Argentine elections, Weber on the ethics of political action, signal an early orientation: economics as a tool for reading how power and markets interact in specific institutional contexts.',
+  },
+  {
+    id:'y1s2', year:'Year 1', sem:'Semester 2',
+    phase:'Foundation',
+    headline:'Money, Power and Democracy',
+    subjects:[
+      {name:'Introduction to Economics II', research:'Research: Rethinking Macroeconomics: Degrowth, Climate Change and Sustainability · Report: Claudia Goldin and Gender Discrimination in the Labour Market · Report: The German vs the US Economic Model · Report: Public Debt in European Countries'},
+      {name:'World Economic History'},
+      {name:'Contemporary European History', research:'Research: Marshall Plan in France · Report: The Think-Tank Archipelago: Thatcherism and Neoliberalism'},
+      {name:'Contemporary History of East Asia', research:'Research: History of Mitsubishi (1870-1973)'},
+      {name:'Theory of Democracy', research:'Essay: Is Liberal Democracy Just Bourgeois Democracy?'},
+    ],
+    analysis:'Introduction to Economics II covers macroeconomics from the supply side through to the political economy of government: the WS-PS model and equilibrium unemployment; aggregate demand and the multiplier; inflation, the Phillips curve, and monetary transmission; the financial sector including money creation and leverage; open-economy policy constraints; long-run growth theory; and the median voter model and principal-agent relationships between citizens and elected governments. World Economic History supplies the long-run empirical record within which those frameworks acquire their full significance, tracing economic development from the Malthusian economy through the Industrial Revolution, the Great Depression, the Bretton Woods settlement, and the second globalisation. Theory of Democracy traces liberal democratic theory from Locke and Rousseau through pluralist, elitist, and critical traditions to the contemporary tensions between democratic governance and geopolitical competition. The Mitsubishi research project grounds the semester in a single extended case: a conglomerate examined across a century of structural shocks, from Meiji origins through wartime expansion and occupation restructuring, as a study in how private capital and state authority co-evolve under successive political and economic transformations.',
+    thread:'The Mitsubishi case establishes a pattern of reasoning that recurs throughout the degree: private capital and sovereign authority do not operate independently, they co-evolve, and the terms of that co-evolution, who bears risk, who captures rent, who controls strategic assets, are the product of political contests as much as market forces. The choice to research Mitsubishi, and alongside it the Marshall Plan in France and the think-tank genealogy of Thatcherism, reflects a deliberate interest in how capital and the state negotiate over long time horizons and across ideological shifts. A political economist entering infrastructure finance carries this as a working assumption. It changes what questions get asked at the deal table, and which risks get properly priced.',
+  },
+  {
+    id:'y2s1', year:'Year 2', sem:'Semester 1',
+    phase:'Political Economy',
+    headline:'How states allocate and direct capital',
+    subjects:[
+      {name:'Public Economics', research:'Report: Unemployment Benefits in France vs the US · Report: Aggregate Demand and Supply-Side Policy'},
+      {name:'Statistics', research:'Project: Minimum Wage and Unemployment: an R Studio Analysis'},
+      {name:'Public Administration', research:'Report: Comparative Analysis of Public Administration in Spain and Morocco'},
+      {name:'From Fascism to National Populism', research:'Report: Lepenism after Jean-Marie Le Pen'},
+      {name:'History of the United States of America', research:'Research: US Foreign Policy and the Rise of ARAMCO'},
+    ],
+    analysis:'Public Economics is the formal political economy core of the first two years, proceeding from the fundamental theorems of welfare economics through a rigorous taxonomy of market failures, the economics of externalities (Pigouvian taxation, tradeable permits, the Coase theorem), public goods, natural monopoly and optimal regulation, Arrow\'s impossibility theorem, cost-benefit analysis, and social insurance design. Statistics extends the quantitative toolkit toward regression analysis and inference. Public Administration examines administrative structure and reform, governance theory, regulatory functions, and the welfare state. From Fascism to National Populism traces the ideological mutation of anti-democratic politics from postwar neo-fascism through Perón, Berlusconi, and the contemporary national-populist wave. United States History covers the political economy of the postwar order from Bretton Woods through the Cold War, the oil shocks, the Reagan programme, and contemporary polarisation. The ARAMCO research, examining a natural resource concession from its original terms through the 50/50 profit-sharing agreement to eventual nationalisation, is the programme\'s first sustained engagement with the political economy of sovereign resource governance.',
+    thread:'The ARAMCO research focus, a concession negotiated, renegotiated, and ultimately nationalised as state capacity and market conditions shifted, is the most instructive historical template for understanding the long-run political economy of energy infrastructure. The formal tools of Public Economics, Pigouvian taxation, cost-benefit analysis, the Coase theorem, provide the vocabulary for reading that process analytically. The practitioner who can reconstruct the welfare economics of a concession renegotiation, or model the state\'s calculus in a nationalisation decision, is equipped to structure transactions that are robust to the political pressures that will bear on them over a long asset life.',
+  },
+  {
+    id:'y2s2', year:'Year 2', sem:'Semester 2',
+    phase:'Political Economy',
+    headline:'Legitimacy, Contestation and International Order',
+    subjects:[
+      {name:'International Economics', research:'Report: Trade Integration in the Maghreb'},
+      {name:'The Gender Perspective in the Contemporary World', research:'Research: European Feminisms 1700-1950 · Essay: Women and the Enlightenment: A Historiographical Reassessment'},
+      {name:'Social Movements', research:'Research: Gezi Park Protests, 2013'},
+      {name:'Public Policies'},
+      {name:'International Relations', research:'Research: Migration, Power and Partnerships: Europe\'s Strategic Future with Morocco and Türkiye'},
+    ],
+    analysis:'International Economics provides the analytical core of the semester, covering trade theory and the evidence on comparative advantage, the WTO and IMF as international economic institutions, FDI and global value chains, alternative exchange rate systems, and the international monetary system from the Gold Standard through Bretton Woods to the Euro. The sovereign debt crises sequence, from Mexico 1994 through Argentina 2002, examines the interaction of sovereign risk, capital flows, and exchange rate misalignment under financial stress. The Gender Perspective in the Contemporary World traces feminist thought from the conceptualisation of patriarchy through successive theoretical and political developments to gender policy as institutionalised public law. Social Movements develops a comparative genealogy of collective action across labour, civil rights, environmental, and urban housing movements. Public Policies covers the formal policy analysis curriculum: problem construction, agenda-setting, formulation, decision rationality, implementation, and evaluation. International Relations surveys the principal theoretical traditions, from realism and liberalism through constructivism and postcolonialism, and applies them to geopolitics, securitisation, and the architecture of the contemporary international order.',
+    thread:'Every regulatory framework governing a major infrastructure asset is a political settlement. The international financial system, as the sovereign debt crisis sequence from Mexico to Argentina demonstrates, can reclassify investment-grade counterparties as distressed within months. The research choices here, trade integration in the Maghreb, European feminisms as a case in norm formation, the Gezi Park protests as a study in political mobilisation, reflect a sustained interest in how political and social processes shape the institutional environment within which capital is deployed. A political economist who understands how regulatory regimes are constructed through contestation, and how the international monetary system generates and withdraws the policy space within which projects are financed, reads both as working conditions.',
+  },
+  {
+    id:'y3s1', year:'Year 3', sem:'Semester 1',
+    phase:'Political Economy',
+    headline:'Political economy at full resolution',
+    subjects:[
+      {name:'European Economy'},
+      {name:'Political Behavior'},
+      {name:'Contemporary History of Latin America', research:'Erasmus · Research: Economic Administration of Chile (1973-present)'},
+      {name:'Contemporary History of Spain'},
+      {name:'Comparative Politics'},
+    ],
+    analysis:'European Economy traces the economic history of European integration from 1957 to the present: the creation of the EU through Maastricht, the Eurozone crisis, Brexit, and the geoeconomics of energy dependence and the Green Deal. The Chile research examines five decades of political economy from Pinochet\'s appointment of Chicago School economists through natural resource sector governance, the Concertación transition, and Bachelet\'s resource rent reforms, as a study in how ideology shapes economic administration across successive regime changes. Contemporary Spanish History provides a compressed parallel: Francoist autarky, the technocratic development model of the 1960s, and the negotiated democratic transition. Political Behavior covers preference formation, coalition construction, and the determinants of electoral participation. Comparative Politics provides the methodology for cross-national analysis of regime types, democratic transitions, and the effects of electoral systems.',
+    thread:'The decision to focus the Chile research on the economic administration of the sector from 1973 to the present is precise: it traces how ideology is operationalised through administrative structures, and how those structures survive or are dismantled across regime change. European states are currently making analogous decisions, through auction design, local content requirements, and state aid frameworks, about how to structure the energy transition. Five decades of Chilean state-market history is the sharpest available preparation for reading those policy choices.',
+  },
+  {
+    id:'y3s2', year:'Year 3', sem:'Semester 2',
+    phase:'Advanced Topics',
+    headline:'The economics of collective decisions and strategic power',
+    subjects:[
+      {name:'Economic Models of Choice and Strategic Interaction', research:'Erasmus · Report: Consumer Analysis and the Role of Information in Sustainable Choices'},
+      {name:'Economics of Social Policies', research:'Erasmus · Report: The Cooperative Business Movement (1950-present)'},
+      {name:'Labour Economics', research:'Erasmus'},
+      {name:'Economic Anthropology and Political Economy', research:'Erasmus'},
+      {name:'Institutions and Politics of the European Union', research:'Erasmus · Report: The Paris Charter and Economic Cooperation'},
+    ],
+    analysis:'Economic Models of Choice and Strategic Interaction is the most formally demanding subject in the programme, developing optimisation methods, individual decision theory under uncertainty, consumer and firm theory, and game theory through Nash equilibria, backward induction, and the efficiency properties of equilibria. The game-theoretic framework provides direct analytical purchase on the dissertation domain: consortium formation in competitive auctions, multi-lender bargaining, and offtake agreement design. Economics of Social Policies examines the fiscal costs and efficiency implications of public intervention instruments, extending the welfare economics of Year 2 into dynamic policy environments. Labour Economics covers wage theory, employment, human capital investment, and comparative labour market institutions. Economic Anthropology and Political Economy interrogates the assumptions of standard economic models and examines how cultural and institutional context shapes economic outcomes in ways those models cannot capture. EU Institutions and Politics is the most institutionally detailed subject in the programme, covering the full treaty history of European integration, the architecture and powers of the principal EU institutions, the major theories of integration, and the complete range of European policies, including the regulatory framework governing energy markets and the state aid constraints on public support for private developers.',
+    thread:'Offshore wind project finance is a multi-party negotiation conducted within a specific regulatory architecture. Game theory provides the formal structure for the first: identifying reservation conditions, mapping outside options, and locating the space within which consortium agreements, debt syndications, and offtake contracts become feasible. EU Institutions provides the detailed knowledge of the second: the legislative process, the state aid framework, the Commission\'s enforcement powers, and the Paris Charter as a foundation for economic cooperation. The choice to pursue this semester at Toulouse, and to focus the EU Institutions research on the Paris Charter, reflects a sustained and specific interest in European institutional architecture that runs through the degree. By the end of this semester, the analytical preparation for the dissertation domain is complete.',
+  },
+  {
+    id:'y4', year:'Year 4', sem:'Full year',
+    phase:'Application',
+    headline:'Knowledge becomes operational',
+    subjects:[
+      {name:'National Macroeconomics', research:'Erasmus'},
+      {name:'Economic Theory of State-Market Relations', research:'Erasmus'},
+      {name:'Advanced Statistics', research:'Erasmus'},
+      {name:'Public Finance'},
+      {name:'DALF C2', research:'Erasmus'},
+      {name:'Internship'},
+      {name:'Capstone dissertation: Offshore Wind Project Finance'},
+    ],
+    analysis:'Economic Theory of State-Market Relations is the theoretical culmination of the programme, constructing a systematic account of how economists from Smith to the present have theorised the proper scope and limits of public authority in economic life: the pre-Keynesian conception of the state\'s role in classical political economy, the Keynesian foundations of active fiscal intervention, post-Keynesian elaborations in welfare economics and public choice theory, and the liberal counter-revolution and the theoretical contest it opened. National Macroeconomics completes the programme\'s macroeconomic formation, moving from the economic circuit and national accounting framework through the determinants of production and growth, the limits of sustainable growth, the state\'s redistributive function, and the financing of the economy through capital markets and financial globalisation. Advanced Statistics develops regression analysis, statistical inference, and econometric method to the standard required for independent engagement with the research literature. Public Finance covers the economics of public expenditure and revenue, the theory of public investment, fiscal rules, and the structure of public-private partnerships: the direct analytical vocabulary of offshore wind auction design and state subsidy frameworks. DALF C2 certifies operational capacity in French at the standard required for professional participation in the OECD, IEA, European Commission, and the principal development finance institutions. The internship provides the first sustained exposure to the professional environment for which the programme has been a preparation. The dissertation on offshore wind project finance demands the integrated deployment of analytical tools accumulated across four years, at the intersection of energy economics, public finance, and the political economy of state-market relations.',
+    thread:'The dissertation is the point at which four years of formation become demonstrable competence. Offshore wind project finance sits at the precise intersection of everything the degree has been building toward: state-market theory, public investment economics, EU regulatory architecture, game-theoretic bargaining, and a comparative historical record that runs from ARAMCO to the European energy transition. That the dissertation subject was chosen, and that it sits at exactly this intersection, is itself an indicator of the analytical formation the degree has produced. A graduate who has completed this work is already operating within infrastructure economics and project finance.',
+  },
+];
+
+// ── RENDER OVERVIEW TABLE ──────────────────────────────────────────────
+buildTable();
+
+// ── RENDER SEMESTER LIST ───────────────────────────────────────────────
+function renderList(){
+  const c=document.getElementById('sem-list');
+  let yr='';
+  c.innerHTML='';
+  data.forEach((d,i)=>{
+    if(d.year!==yr){
+      yr=d.year;
+      const yl=document.createElement('div');
+      yl.className='yr-label';
+      yl.style.marginTop=i>0?'10px':'0';
+      yl.textContent=d.year;
+      c.appendChild(yl);
+    }
+    const b=document.createElement('button');
+    b.className='sem-btn';
+    b.id='btn-'+d.id;
+    b.innerHTML=`<span style="font-weight:500;color:var(--color-text-primary);font-size:13px;">${d.sem}</span><br><span style="font-size:11px;color:#6366F1;">${d.phase}</span>`;
+    b.onclick=()=>renderDetail(d.id);
+    c.appendChild(b);
+  });
+}
+
+function renderDetail(id){
+  const d=data.find(x=>x.id===id);
+  document.querySelectorAll('.sem-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+id).classList.add('active');
+
+  document.getElementById('detail-panel').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">${d.year} · ${d.sem}</div>
+        <div style="font-size:16px;font-weight:500;color:var(--color-text-primary);line-height:1.3;">${d.headline}</div>
+      </div>
+      <span style="background:#F5F3FF;color:#3730A3;font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;">${d.phase}</span>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      ${d.subjects.map(s=>`
+        <div class="subject-row">
+          <span class="dot"></span>
+          <div>
+            <span style="color:var(--color-text-primary);">${s.name}</span>
+            ${s.research?s.research.split(' · ').map(r=>{const isErasmus=r.startsWith('Erasmus');const label=isErasmus?'Erasmus':r.replace(/^(\w+)([\s\S]*)$/,(m,p1,p2)=>`<strong>${p1}</strong>${p2}`);return `<div style="font-size:11px;color:${isErasmus?'#3730A3':'#9A3412'};background:${isErasmus?'#F5F3FF':'#FFF7ED'};padding:2px 7px;border-radius:4px;display:inline-block;margin-top:3px;margin-right:3px;">${isErasmus?'🇫🇷 ':''}${label}</div>`;}).join(''):''}
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:14px;margin-bottom:12px;">
+      <div class="section-label">Analysis</div>
+      <div style="border-left:2px solid #6366F1;padding-left:12px;font-size:13px;color:var(--color-text-secondary);line-height:1.65;">${d.analysis}</div>
+    </div>
+
+    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:14px;">
+      <div class="section-label">Connecting Thread</div>
+      <div style="font-size:13px;color:var(--color-text-primary);line-height:1.7;font-style:italic;padding-left:12px;border-left:2px solid #6366F1;">${d.thread}</div>
+    </div>
+  `;
+}
+
+renderList();
+renderDetail('y1s1');
+buildDiscLists();
+</script>
